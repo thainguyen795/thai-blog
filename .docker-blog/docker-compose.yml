@@ -1,0 +1,38 @@
+version: '3.3'
+
+services:
+  nodejs:
+    image: node:18-alpine
+    working_dir: /app
+    expose:
+      - 3000
+    command: ["yarn", "dev", "npm"]
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#          memory: 8G
+    volumes:
+      - ..:/app
+    extra_hosts:
+      - '${LOCAL_PWA_DOMAIN} ${LOCAL_LARAVEL_DOMAIN} ${LOCAL_MAGENTO_DOMAIN}:host-gateway'
+  web:
+    image: nginx:alpine
+    volumes:
+      - ./vhost_${LOCAL_TYPE:-frontend}.conf:/etc/nginx/templates/default.conf.template:ro
+    environment:
+      - VIRTUAL_HOST=${LOCAL_PWA_DOMAIN}
+      - VIRTUAL_PORT=80
+      - CERT_NAME=default
+      - STAGING_WS=${STAGING_WS}
+      - LOCAL_LARAVEL_DOMAIN=${LOCAL_LARAVEL_DOMAIN}
+      - LOCAL_MAGENTO_DOMAIN=${LOCAL_MAGENTO_DOMAIN}
+    extra_hosts:
+      - '${LOCAL_PWA_DOMAIN} ${LOCAL_LARAVEL_DOMAIN} ${LOCAL_MAGENTO_DOMAIN}:host-gateway'
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
